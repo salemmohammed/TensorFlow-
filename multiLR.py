@@ -45,28 +45,28 @@ def main(_):
 		with tf.device(tf.train.replica_device_setter(worker_device="/job:worker/task:%d" % FLAGS.task_index,cluster=cluster)):
 
 			with tf.name_scope("weights"):
-				weights_1  = tf.Variable(tf.zeros[784,100])
-				weights_2  = tf.Variable(tf.zeros[100,10])
+				weights_1  = tf.Variable(tf.zeros([784,100]))
+				weights_2  = tf.Variable(tf.zeros([100,10]))
 			
 			with tf.name_scope('bias'):
-				bias_1 = tf.Variable(tf.zeros[100])
-				bias_2 = tf.Variable(tf.zeros[10])
+				bias_1 = tf.Variable(tf.zeros([100]))
+				bias_2 = tf.Variable(tf.zeros([10]))
 
 			# input the image 
 			with tf.name_scope('input'):
 				examples = tf.placeholder(tf.float32,[None,784])
-				lables   = tf.placeholder(tf.float32,[None,10])
+				Labels   = tf.placeholder(tf.float32,[None,10])
 
 			with tf.name_scope('Softmax'):
 				first = tf.add(tf.matmul(examples,weights_1), bias_1)
-				second = tf.nn.segmoid(first)
+				second = tf.nn.sigmoid(first)
 				third = tf.add(tf.matmul(second,weights_2), bias_2)
 				Estimates = tf.nn.softmax(third)
 
 
 			with tf.name_scope("cross_entropy") as scope:
 				cross_entropy = -tf.reduce_sum(Labels * tf.log(Estimates))
-				tf.scalar_summary("cross_entropy",cross_entropy)
+				tf.summary.scalar("cross_entropy",cross_entropy)
 
 				# Optimization or training the model 
 				# optimizer is the traiing. simply i train it to become good and less error 
@@ -86,13 +86,14 @@ def main(_):
 				accuracy = tf.reduce_mean(tf.cast(predictions, "float"))
 
 		# The StopAtStepHook handles stopping after running given steps.
-		hooks=[tf.train.StopAtStepHook(last_step=1000000)]
+		hooks=[tf.train.StopAtStepHook(last_step=10000)]
+		print("Here-------------------------")
 
 		# The MonitoredTrainingSession takes care of session initialization,
 		# restoring from a checkpoint, saving to a checkpoint, and closing when done
 		# or an error occurs.
-
-		with tf.train.MonitoredTrainingSession(master=server.target,is_chief=(FLAGS.task_index == 0),checkpoint_dir="/tmp/train_logs",hooks=hooks) as mon_sess:
+		with tf.train.MonitoredTrainingSession(master=server.target,is_chief=True,checkpoint_dir="/tmp/train_logs",hooks=hooks) as mon_sess:
+			print("Here-------------------------")
 			while not mon_sess.should_stop():
 				mon_sess.run(train_op)
 		
